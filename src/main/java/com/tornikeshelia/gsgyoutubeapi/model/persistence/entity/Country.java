@@ -26,4 +26,8 @@ public class Country {
     @Column(name = "country_code")
     private String countryCode;
 
+    public Country(String countryName, String countryCode) {
+        this.countryName = countryName;
+        this.countryCode = countryCode;
+    }
 }
