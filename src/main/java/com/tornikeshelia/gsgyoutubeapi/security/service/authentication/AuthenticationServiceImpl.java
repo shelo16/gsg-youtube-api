@@ -34,7 +34,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
     /**
      * AuthenticateUser method :
-     * @param authenticationRequest -> email,password
+     * @param authenticationRequest -> username,password
      * 1 ) Authenticates User if username and password are correct
      * 2 ) Creates JWT token and stores it as HttpOnly cookie
      * @return checkUserAuthReponse -> boolean isAuthenticated , email

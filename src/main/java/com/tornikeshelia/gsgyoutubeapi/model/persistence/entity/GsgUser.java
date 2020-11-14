@@ -29,10 +29,6 @@ public class GsgUser {
     @JoinColumn(name = "COUNTRY_ID")
     private Country country;
 
-    @OneToOne
-    @JoinColumn(name = "YOUTUBE_LINK_ID")
-    private YoutubeLink youtubeLink;
-
     @Column(name = "JOB_TRIGGER_TIME")
     private int jobTriggerTime;
 
