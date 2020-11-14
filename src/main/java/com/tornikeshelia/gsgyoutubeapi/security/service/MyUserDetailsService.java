@@ -1,6 +1,7 @@
 package com.tornikeshelia.gsgyoutubeapi.security.service;
 
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.GsgUser;
+import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.CountriesRepository;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.GsgUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;

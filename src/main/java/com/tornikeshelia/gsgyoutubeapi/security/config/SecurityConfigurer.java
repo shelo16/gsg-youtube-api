@@ -33,11 +33,10 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
         http.cors()
                 .and().csrf().disable()
                 .requestMatchers()
-                .antMatchers("/auth/**","/secure/**")
+                .antMatchers("/auth/**","/youtube/**")
                 .and()
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
     }
 
     @Bean

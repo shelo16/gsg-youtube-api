@@ -1,6 +1,5 @@
-package com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.Video;
+package com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.video;
 
-import com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.comment.Snippet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

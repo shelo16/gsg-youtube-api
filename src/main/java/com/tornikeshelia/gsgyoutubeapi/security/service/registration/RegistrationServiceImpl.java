@@ -42,12 +42,15 @@ public class RegistrationServiceImpl implements RegistrationService {
             gsgUser = new GsgUser();
         }
 
-        BeanUtils.copyProperties(registerUserBean, gsgUser);
-        gsgUser.setIsAuthenticated(1L);
-        gsgUser.setBcryptedPassword(bCryptPasswordEncoder.encode(registerUserBean.getPassword()));
-        // TODO : set countries
+        String password = bCryptPasswordEncoder.encode(registerUserBean.getPassword());
         Country country = countriesRepository.findById(registerUserBean.getCountryId()).orElseThrow(() -> new GeneralException(GsgError.COULDNT_FIND_COUNTRY));
-        gsgUser.setCountry(country);
+        gsgUser = GsgUser.builder()
+                .bcryptedPassword(password)
+                .country(country)
+                .jobTriggerTime(registerUserBean.getJobTriggerTime())
+                .userName(registerUserBean.getUsername())
+                .isAuthenticated(0L)
+                .build();
         userRepository.save(gsgUser);
 
     }

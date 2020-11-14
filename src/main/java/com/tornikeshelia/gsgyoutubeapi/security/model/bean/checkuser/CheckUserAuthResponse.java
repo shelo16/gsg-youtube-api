@@ -13,5 +13,6 @@ public class CheckUserAuthResponse {
 
     private Boolean isAuthenticated;
     private String username;
+    private int jobTriggerTime;
 
 }

@@ -1,11 +1,14 @@
 package com.tornikeshelia.gsgyoutubeapi.security.service.authentication;
 
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.GsgUser;
+import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.YoutubeLink;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.GsgUserRepository;
+import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.YoutubeLinkRepository;
 import com.tornikeshelia.gsgyoutubeapi.security.model.bean.authentication.AuthenticationRequest;
 import com.tornikeshelia.gsgyoutubeapi.security.model.bean.checkuser.CheckUserAuthResponse;
 import com.tornikeshelia.gsgyoutubeapi.security.service.JwtUtilService;
 import com.tornikeshelia.gsgyoutubeapi.security.service.MyUserDetailsService;
+import com.tornikeshelia.gsgyoutubeapi.service.youtube.YoutubeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,6 +35,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     @Autowired
     private GsgUserRepository userRepository;
 
+    @Autowired
+    private YoutubeService youtubeService;
+
+    @Autowired
+    private YoutubeLinkRepository youtubeLinkRepository;
+
     /**
      * AuthenticateUser method :
      * @param authenticationRequest -> username,password
@@ -56,6 +65,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         userRepository.save(gsgUser);
 
         // TODO :: Get youtube Link for best video and best comment -> update youtube Link;
+        YoutubeLink youtubeLink = youtubeLinkRepository.getByUser(gsgUser);
+        youtubeService.saveByUserAndYoutube(gsgUser,youtubeLink);
 
         final String jwt = jwtUtilService.generateToken(userDetails);
         Cookie cookie = new Cookie("token", jwt);
@@ -64,7 +75,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         res.addCookie(cookie);
-        return new CheckUserAuthResponse(true, authenticationRequest.getUsername());
+        return new CheckUserAuthResponse(true, gsgUser.getUserName(), gsgUser.getJobTriggerTime());
     }
 
     /**
@@ -79,20 +90,20 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     @Override
     public CheckUserAuthResponse checkIfUserIsAuthenticated(HttpServletRequest request) {
         String jwtToken = null;
-        String email = null;
         Boolean isAuthenticated = false;
         Cookie[] cookies = request.getCookies();
+        GsgUser gsgUser = null;
         if (cookies != null && cookies.length > 0) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals("token")) {
                     jwtToken = cookie.getValue();
-                    email = jwtUtilService.extractUsername(jwtToken);
                     isAuthenticated = jwtUtilService.validateToken(jwtToken);
+                    gsgUser = userRepository.searchByUsername(jwtUtilService.extractUsername(jwtToken));
                     break;
                 }
             }
         }
-        return new CheckUserAuthResponse(isAuthenticated, email);
+        return new CheckUserAuthResponse(isAuthenticated, gsgUser.getUserName(),gsgUser.getJobTriggerTime());
     }
 
     /**

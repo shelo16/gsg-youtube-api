@@ -1,6 +1,7 @@
 package com.tornikeshelia.gsgyoutubeapi.service.youtube;
 
-import com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.Video.YoutubeVideoResponse;
+import com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.full.YoutubeFullBean;
+import com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.video.YoutubeVideoResponse;
 import com.tornikeshelia.gsgyoutubeapi.model.bean.youtube.comment.YoutubeCommentReponse;
 import com.tornikeshelia.gsgyoutubeapi.model.enums.GsgError;
 import com.tornikeshelia.gsgyoutubeapi.model.exception.GeneralException;
@@ -8,6 +9,8 @@ import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.GsgUser;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.YoutubeLink;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.GsgUserRepository;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.YoutubeLinkRepository;
+import com.tornikeshelia.gsgyoutubeapi.security.model.bean.checkuser.CheckUserAuthResponse;
+import com.tornikeshelia.gsgyoutubeapi.security.service.authentication.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -15,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class YoutubeServiceImpl implements YoutubeService {
@@ -31,10 +36,16 @@ public class YoutubeServiceImpl implements YoutubeService {
     @Autowired
     private YoutubeLinkRepository youtubeLinkRepository;
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
+    @Autowired
+    private GsgUserRepository userRepositoryr;
+
     @Override
     public void saveByUserAndYoutube(GsgUser user, YoutubeLink youtubeLink) {
 
-        if (user == null){
+        if (user == null) {
             throw new GeneralException(GsgError.COULDNT_FIND_USER_BY_PROVIDED_ID);
         }
         String regionCode = user.getCountry().getCountryCode();
@@ -58,14 +69,30 @@ public class YoutubeServiceImpl implements YoutubeService {
         if (youtubeLink == null) {
             youtubeLink = YoutubeLink.builder()
                     .gsgUser(user)
-                    .trendingVideoUrl("youtube.com/watch?v=" + youtubeVideoUrl)
+                    .trendingVideoUrl("https://youtube.com/embed/" + youtubeVideoUrl)
                     .commentUrl(comment)
                     .build();
         } else {
-            youtubeLink.setTrendingVideoUrl("youtube.com/watch?v=" + youtubeVideoUrl);
+            youtubeLink.setTrendingVideoUrl("https://youtube.com/embed/" + youtubeVideoUrl);
             youtubeLink.setCommentUrl(comment);
         }
 
         youtubeLinkRepository.save(youtubeLink);
+    }
+
+    @Override
+    public YoutubeFullBean getYoutubeForUser(HttpServletRequest request) {
+
+        CheckUserAuthResponse checkUserAuthResponse = authenticationService.checkIfUserIsAuthenticated(request);
+        if (checkUserAuthResponse == null) {
+            throw new GeneralException(GsgError.USER_IS_NOT_AUTHENTICATED);
+        }
+        GsgUser gsgUser = userRepository.searchByUsername(checkUserAuthResponse.getUsername());
+        if (gsgUser == null){
+            throw new GeneralException(GsgError.COULDNT_FIND_USER_BY_PROVIDED_ID);
+        }
+        YoutubeLink youtubeLink = youtubeLinkRepository.getByUser(gsgUser);
+
+        return YoutubeFullBean.transformYoutubeLinkEntityToBean(youtubeLink);
     }
 }
