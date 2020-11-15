@@ -1,14 +1,20 @@
 package com.tornikeshelia.gsgyoutubeapi.security.service.authentication;
 
+import com.tornikeshelia.gsgyoutubeapi.model.enums.GsgError;
+import com.tornikeshelia.gsgyoutubeapi.model.exception.GeneralException;
+import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.Country;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.GsgUser;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.YoutubeLink;
+import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.CountriesRepository;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.GsgUserRepository;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.repository.YoutubeLinkRepository;
 import com.tornikeshelia.gsgyoutubeapi.security.model.bean.authentication.AuthenticationRequest;
 import com.tornikeshelia.gsgyoutubeapi.security.model.bean.checkuser.CheckUserAuthResponse;
+import com.tornikeshelia.gsgyoutubeapi.security.model.bean.reset.ResetUserData;
 import com.tornikeshelia.gsgyoutubeapi.security.service.JwtUtilService;
 import com.tornikeshelia.gsgyoutubeapi.security.service.MyUserDetailsService;
 import com.tornikeshelia.gsgyoutubeapi.service.youtube.YoutubeService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Service
-public class AuthenticationServiceImpl implements AuthenticationService{
+public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -41,11 +47,15 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     @Autowired
     private YoutubeLinkRepository youtubeLinkRepository;
 
+    @Autowired
+    private CountriesRepository countriesRepository;
+
     /**
      * AuthenticateUser method :
+     *
      * @param authenticationRequest -> username,password
-     * 1 ) Authenticates User if username and password are correct
-     * 2 ) Creates JWT token and stores it as HttpOnly cookie
+     *                              1 ) Authenticates User if username and password are correct
+     *                              2 ) Creates JWT token and stores it as HttpOnly cookie
      * @return checkUserAuthReponse -> boolean isAuthenticated , email
      **/
     @Override
@@ -66,7 +76,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
         // TODO :: Get youtube Link for best video and best comment -> update youtube Link;
         YoutubeLink youtubeLink = youtubeLinkRepository.getByUser(gsgUser);
-        youtubeService.saveByUserAndYoutube(gsgUser,youtubeLink);
+        youtubeService.saveByUserAndYoutube(gsgUser, youtubeLink);
 
         final String jwt = jwtUtilService.generateToken(userDetails);
         Cookie cookie = new Cookie("token", jwt);
@@ -80,12 +90,11 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
     /**
      * checkIfUserIsAuthenticated method :
+     *
      * @param request HttpServletRequest -> To check the cookie
-     * 1 ) check cookies for token
-     * 2 ) if token exists :
-     *          @return checkUserAuthReponse -> boolean isAuthenticated , email
-     *    if token Doesnt exist :
-     *          @return checkUserAuthResponse -> isAuthenticated =null , email = null
+     *                1 ) check cookies for token
+     *                2 ) if token exists :
+     * @return checkUserAuthResponse -> isAuthenticated =null , email = null
      **/
     @Override
     public CheckUserAuthResponse checkIfUserIsAuthenticated(HttpServletRequest request) {
@@ -103,15 +112,16 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 }
             }
         }
-        return new CheckUserAuthResponse(isAuthenticated, gsgUser.getUserName(),gsgUser.getJobTriggerTime());
+        return new CheckUserAuthResponse(isAuthenticated, gsgUser.getUserName(), gsgUser.getJobTriggerTime());
     }
 
     /**
      * Logout Logic :
-     * @param request HttpServletRequest -> To check the cookie
+     *
+     * @param request  HttpServletRequest -> To check the cookie
      * @param response HttpServletResponse -> to set the cookie expiration
-     * Checks if Cookie has a "token" value inside (which is a JWT token)
-     * if true -> gets the token and sets its expiration date as NOW, which basically deletes the cookie
+     *                 Checks if Cookie has a "token" value inside (which is a JWT token)
+     *                 if true -> gets the token and sets its expiration date as NOW, which basically deletes the cookie
      **/
     @Override
     public void logout(HttpServletResponse response, HttpServletRequest request) {
@@ -136,5 +146,78 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         response.addCookie(cookie);
+    }
+
+    /**
+     * resetUserData Logic :
+     *
+     * @param request       HttpServletRequest -> To check the cookie
+     * @param resetUserData ResetUserData -> to update userData
+     *                      Checks if Cookie has a "token" value inside (which is a JWT token)
+     *                      if true -> gets the token and user
+     *                      if country is different (is updated ) -> update youtube link as well
+     *                      Updates user
+     **/
+    @Override
+    public void resetUserData(ResetUserData resetUserData, HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        GsgUser gsgUser = null;
+        String jwtToken = null;
+        if (cookies != null && cookies.length > 0) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("token")) {
+                    jwtToken = cookie.getValue();
+                    gsgUser = userRepository.searchByUsername(jwtUtilService.extractUsername(jwtToken));
+                    if (gsgUser == null) {
+                        throw new GeneralException(GsgError.COULDNT_FIND_USER_BY_USERNAME);
+                    }
+                    Country country = countriesRepository.findById(resetUserData.getCountryId())
+                            .orElseThrow(() -> new GeneralException(GsgError.COULDNT_FIND_COUNTRY));
+                    BeanUtils.copyProperties(resetUserData, gsgUser);
+
+                    if (country != gsgUser.getCountry()) {
+                        YoutubeLink youtubeLink = youtubeLinkRepository.getByUser(gsgUser);
+                        gsgUser.setCountry(country);
+                        youtubeService.saveByUserAndYoutube(gsgUser,youtubeLink);
+                    }
+                    userRepository.save(gsgUser);
+                    break;
+                }
+            }
+            if (jwtToken == null) {
+                throw new GeneralException(GsgError.MUST_BE_AUTHENTICATED);
+            }
+        }
+    }
+
+    /**
+     * getResetUserdata Logic :
+     *
+     * @param request HttpServletRequest -> To check the cookie
+     *                Checks if Cookie has a "token" value inside (which is a JWT token)
+     *                if true -> gets the token and user
+     *                creates new ResetUserData and returns it :
+     * @return resetUserData ResetUserData -> to update userData
+     **/
+    @Override
+    public ResetUserData getResetUserdata(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        GsgUser gsgUser = null;
+        String jwtToken = null;
+        if (cookies != null && cookies.length > 0) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("token")) {
+                    jwtToken = cookie.getValue();
+                    gsgUser = userRepository.searchByUsername(jwtUtilService.extractUsername(jwtToken));
+                    if (gsgUser == null) {
+                        throw new GeneralException(GsgError.COULDNT_FIND_USER_BY_USERNAME);
+                    }
+                    Country country = gsgUser.getCountry();
+                    int jobTriggerTime = gsgUser.getJobTriggerTime();
+                    return new ResetUserData(country.getId(), jobTriggerTime);
+                }
+            }
+        }
+        return null;
     }
 }

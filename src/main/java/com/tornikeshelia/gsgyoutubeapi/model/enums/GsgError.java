@@ -16,6 +16,7 @@ public enum GsgError {
     COULDNT_FIND_USER_BY_PROVIDED_ID("User with provided id doesn't exist"),
     COULDNT_FIND_USER_BY_USERNAME("User with provided id doesn't exist"),
     USER_IS_NOT_AUTHENTICATED("User is not authenticated"),
+    MUST_BE_AUTHENTICATED("User must be authenticated"),
 
     // ================= COUNTRY ERRORS ===================
     COULDNT_FIND_COUNTRY("Couldn't find country by provided id");

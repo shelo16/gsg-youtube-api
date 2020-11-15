@@ -91,8 +91,38 @@ public class YoutubeServiceImpl implements YoutubeService {
         if (gsgUser == null){
             throw new GeneralException(GsgError.COULDNT_FIND_USER_BY_PROVIDED_ID);
         }
-        YoutubeLink youtubeLink = youtubeLinkRepository.getByUser(gsgUser);
 
+        YoutubeLink youtubeLink = new YoutubeLink();
+        String regionCode = gsgUser.getCountry().getCountryCode();
+        String videoApiUrl = this.videoApiUrl + "&regionCode=" + regionCode;
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<YoutubeVideoResponse> responseVideo = restTemplate
+                .exchange(videoApiUrl, HttpMethod.GET, null, YoutubeVideoResponse.class);
+
+        System.out.println(responseVideo);
+        String trendingVideo = responseVideo.getStatusCode() == HttpStatus.OK ? responseVideo.getBody().getItems().get(0).getId() : "";
+
+
+        String commentApiUrl = this.commentApiUrl + "&videoId=" + trendingVideo;
+        ResponseEntity<YoutubeCommentReponse> responseComment = restTemplate
+                .exchange(commentApiUrl, HttpMethod.GET, null, YoutubeCommentReponse.class);
+        String youtubeVideoUrl = responseVideo.getBody().getItems().get(0).getId();
+        String comment = responseComment.getBody().getItems().get(0).getSnippet().getTopLevelComment().getSnippet().getTextOriginal();
+
+        if (youtubeLink == null) {
+            youtubeLink = YoutubeLink.builder()
+                    .gsgUser(gsgUser)
+                    .trendingVideoUrl("https://youtube.com/embed/" + youtubeVideoUrl)
+                    .commentUrl(comment)
+                    .build();
+        } else {
+            youtubeLink.setTrendingVideoUrl("https://youtube.com/embed/" + youtubeVideoUrl);
+            youtubeLink.setCommentUrl(comment);
+        }
+
+        youtubeLinkRepository.save(youtubeLink);
         return YoutubeFullBean.transformYoutubeLinkEntityToBean(youtubeLink);
     }
 }

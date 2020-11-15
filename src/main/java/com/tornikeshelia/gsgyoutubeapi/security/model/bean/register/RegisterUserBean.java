@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -26,6 +28,8 @@ public class RegisterUserBean {
     private Long countryId;
 
     @NotNull
+    @Min(1)
+    @Max(60)
     private Integer jobTriggerTime;
 
 }
