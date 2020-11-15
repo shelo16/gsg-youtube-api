@@ -1,4 +1,4 @@
-# bog-ecommerce
+# GSG-Youtube
 Demo project for GSG 
 
 
