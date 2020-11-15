@@ -24,6 +24,16 @@ public class TaskScheduler {
     @Autowired
     private YoutubeLinkRepository youtubeLinkRepository;
 
+
+    /**
+     *
+     *
+     * Right now, the YoutubeUpdate by Trigger time is solved in Angular UI of this project. But this method shows how I would solve it in API
+     *
+     * Gets only authenticated users and updates their YoutubeLink by trigger time
+     *
+     *
+     * **/
     @Scheduled(cron = "0 * * * * *")
     public void updateYoutube() {
         List<GsgUser> authenticatedUsers = userRepository.getAuthenticatedUsers();

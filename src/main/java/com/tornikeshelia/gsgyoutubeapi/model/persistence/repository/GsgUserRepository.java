@@ -3,6 +3,7 @@ package com.tornikeshelia.gsgyoutubeapi.model.persistence.repository;
 import com.tornikeshelia.gsgyoutubeapi.model.persistence.entity.GsgUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 

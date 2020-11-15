@@ -42,6 +42,15 @@ public class YoutubeServiceImpl implements YoutubeService {
     @Autowired
     private GsgUserRepository userRepositoryr;
 
+    /**
+     *
+     * @param user,youtubeLink
+     *
+     * 1) gets youtube trendind video by Region Code
+     * 2) gets top comment by the trending video
+     * 3) updates/or/saves youtubeLink for user
+     *
+     * **/
     @Override
     public void saveByUserAndYoutube(GsgUser user, YoutubeLink youtubeLink) {
 
@@ -80,6 +89,15 @@ public class YoutubeServiceImpl implements YoutubeService {
         youtubeLinkRepository.save(youtubeLink);
     }
 
+
+    /**
+     *
+     * 1) checks if user is authenticated
+     * 2) gets new trending video and comments for youtube
+     * 3) updates youtubeLink
+     * @return YoutubeFullBean
+     *
+     * **/
     @Override
     public YoutubeFullBean getYoutubeForUser(HttpServletRequest request) {
 
