@@ -24,4 +24,4 @@ Used external APIs :
 
 Solution for JobTriggerTime : 
 
-Right now , its solved on Clients side via Angular Interval. But , I also have a @Schedule which update Youtube for user (this is only to show how I would solve it in API )
+Right now , its solved on Clients side via Angular Interval. But , I also have a @Schedule which updates Youtube for user (this is only to show how I would solve it in API )
